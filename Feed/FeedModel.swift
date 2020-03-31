@@ -11,3 +11,7 @@ import Foundation
 struct FeedModel: Codable {
     var text: String
 }
+
+class Feed {
+    var text = ""
+}

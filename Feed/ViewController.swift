@@ -12,7 +12,7 @@ class ViewController: UIViewController {
     
     private let app = UIApplication.shared.delegate as! AppDelegate
     
-    var dataSources: [FeedModel] = [] {
+    var dataSources: [NSMutableAttributedString] = [] {
         didSet {
             tableView.reloadData()
         }
@@ -25,7 +25,21 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         loadData()
         
-        var temp = [FeedModel]()
+    }
+
+    private func loadData() {
+        if let url = Bundle.main.url(forResource: "feed", withExtension: "json") {
+            do {
+                let data = try Data(contentsOf: url)
+                let decoder = JSONDecoder()
+                prepareData(try decoder.decode([FeedModel].self, from: data))
+            } catch {
+                print("error:\(error)")
+            }
+        }
+    }
+    
+    private func prepareData(_ models: [FeedModel]) {
         /// 数据过滤规则
         /// 1. 去 br 替换成 \n
         /// 2. 去 style
@@ -38,19 +52,19 @@ class ViewController: UIViewController {
         /// 9. 长微博全文链接 替换
         /// 10. http/https 链接替换
         ///
-        dataSources.forEach {
+        models.forEach {
             var m = FeedModel.init(text: replace(validateString: $0.text, regex: "<br />", content: "\n"))
             m.text = replace(validateString: m.text, regex: " style=('|\")(.*?)('|\")", content: "")
             m.text = replace(validateString: m.text, regex: " class=('|\")(.*?)('|\")", content: "")
             m.text = replace(validateString: m.text, regex: "<span><img alt=\\[(.+?)\\].+?</span>", content: "[$1]")
             m.text = replace(validateString: m.text, regex: "<span><img .+?</span>", content: "")
             let topicReg = "<a  href=\"https://m.weibo.cn/search+.*?>([\\s\\S]*?)<span>(.+?)</span></a>"
-            let topics = RegularExpression(regex: topicReg, validateString: m.text)
+            let topics: [String] = RegularExpression(regex: topicReg, validateString: m.text)
             if topics.count == 1 {
                 m.text = replace(validateString: m.text, regex: topicReg, content: "$2")
             }
             let superTopicReg = "<a  href=('|\")https://m.weibo.cn/p/index+.*?>([\\s\\S]*?)<span>(.+?)</span></a>"
-            let superTopics = RegularExpression(regex: superTopicReg, validateString: m.text)
+            let superTopics: [String] = RegularExpression(regex: superTopicReg, validateString: m.text)
             if superTopics.count == 1 {
                 m.text = replace(validateString: m.text, regex: superTopicReg, content: "#$2[超话]#")
             }
@@ -59,7 +73,7 @@ class ViewController: UIViewController {
             m.text = replace(validateString: m.text, regex: "<a href=('|\")(.+?)('|\")>全文</a>", content: "feed:/$2")
             
             let linkReg = "<a data-url.+? href=('|\").+?</a>"
-            let links = RegularExpression(regex: linkReg, validateString: m.text)
+            let links: [String] = RegularExpression(regex: linkReg, validateString: m.text)
             
             if links.count > 0 {
                 links.forEach { (i) in
@@ -70,24 +84,41 @@ class ViewController: UIViewController {
                 }
             }
             
-            temp.append(m)
-        }
-        dataSources = temp
-        dataSources.forEach { m in
-            let s = RegularExpression(regex: "<[^>]*>", validateString: m.text)
-            links.append(s)
-        }
-    }
-
-    private func loadData() {
-        if let url = Bundle.main.url(forResource: "feed", withExtension: "json") {
-            do {
-                let data = try Data(contentsOf: url)
-                let decoder = JSONDecoder()
-                dataSources = try decoder.decode([FeedModel].self, from: data)
-            } catch {
-                print("error:\(error)")
+            let text: NSMutableAttributedString = NSMutableAttributedString.init(string: m.text)
+            /// 话题 表情 @ http/https feed://
+            let topicss = RegularExpressions(regex: "#[^#]+#", validateString: m.text)
+            
+            let emos = RegularExpressions(regex: "(\\[[0-9a-zA-Z\\u4e00-\\u9fa5]+\\])", validateString: m.text)
+            
+            let ats = RegularExpressions(regex: "@[\\u4e00-\\u9fa5a-zA-Z0-9_-]{2,30}", validateString: m.text)
+            
+            let urls = RegularExpressions(regex: "((http[s]{0,1}|ftp)://[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)|(www.[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)", validateString: m.text)
+            
+            let feed = RegularExpressions(regex: "feed://.+", validateString: m.text)
+            
+            ats.forEach { (str, range) in
+                text.addAttributes([NSAttributedString.Key.foregroundColor : UIColor.red], range: range)
             }
+            topicss.forEach { (str, range) in
+                text.addAttributes([NSAttributedString.Key.foregroundColor : UIColor.green], range: range)
+            }
+            print("before-----", text.length)
+            emos.reversed().forEach { (str, range) in
+                let attach = NSTextAttachment.init(image: UIImage(named: "panda")!)
+                attach.bounds = CGRect(x: 0, y: 0, width: 18, height: 18)
+                let icon = NSAttributedString.init(attachment: attach)
+                text.replaceCharacters(in: range, with: icon)
+            }
+            print("after-----", text.length)
+//            urls.reversed().forEach { (str, range) in
+//                if let title = app.urlDict[str] {
+//                    let t = NSAttributedString.init(string: title)
+//                    text.replaceCharacters(in: range, with: t)
+//                }
+//            }
+            
+            dataSources.append(text)
+            print("")
         }
     }
     
@@ -134,6 +165,24 @@ class ViewController: UIViewController {
         }
     }
     
+    private func RegularExpressions(regex:String,validateString:String) -> [(String, NSRange)]{
+        do {
+            let regex: NSRegularExpression = try NSRegularExpression(pattern: regex, options: [])
+            let matches = regex.matches(in: validateString, options: [], range: NSMakeRange(0, validateString.count))
+            
+            var data:[(String, NSRange)] = Array()
+            for item in matches {
+                let string = (validateString as NSString).substring(with: item.range)
+                data.append((string, item.range))
+            }
+            
+            return data
+        }
+        catch {
+            return []
+        }
+    }
+    
 }
 
 extension ViewController: UITableViewDataSource {
@@ -142,7 +191,7 @@ extension ViewController: UITableViewDataSource {
     }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell") as! TextCell
-        cell.txt.text  = dataSources[indexPath.row].text
+        cell.txt.attributedText  = dataSources[indexPath.row]
         return cell
     }
 }
