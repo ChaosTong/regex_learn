@@ -10,6 +10,8 @@ import UIKit
 
 class ViewController: UIViewController {
     
+    private let app = UIApplication.shared.delegate as! AppDelegate
+    
     var dataSources: [FeedModel] = [] {
         didSet {
             tableView.reloadData()
@@ -24,46 +26,49 @@ class ViewController: UIViewController {
         loadData()
         
         var temp = [FeedModel]()
-        
+        /// 数据过滤规则
+        /// 1. 去 br 替换成 \n
+        /// 2. 去 style
+        /// 3. 去 class
+        /// 4. 表情链接替换 [doge]
+        /// 5. 去链接前的 icon
+        /// 6. 带链接的话题 转 #topic#
+        /// 7. 带链接的超话转 #topic[超话]#
+        /// 8. 带链接 @ 转 普通@
+        /// 9. 长微博全文链接 替换
+        /// 10. http/https 链接替换
+        ///
         dataSources.forEach {
             var m = FeedModel.init(text: replace(validateString: $0.text, regex: "<br />", content: "\n"))
-            m.text = replace(validateString: m.text, regex: " style='(.*?)'", content: "")
-            m.text = replace(validateString: m.text, regex: "<span class='url-icon'>.+?</span>", content: "")
-            m.text = replace(validateString: m.text, regex: " class=\"(.*?)\"", content: "")
+            m.text = replace(validateString: m.text, regex: " style=('|\")(.*?)('|\")", content: "")
+            m.text = replace(validateString: m.text, regex: " class=('|\")(.*?)('|\")", content: "")
+            m.text = replace(validateString: m.text, regex: "<span><img alt=\\[(.+?)\\].+?</span>", content: "[$1]")
+            m.text = replace(validateString: m.text, regex: "<span><img .+?</span>", content: "")
             let topicReg = "<a  href=\"https://m.weibo.cn/search+.*?>([\\s\\S]*?)<span>(.+?)</span></a>"
             let topics = RegularExpression(regex: topicReg, validateString: m.text)
             if topics.count == 1 {
                 m.text = replace(validateString: m.text, regex: topicReg, content: "$2")
             }
-            let superTopicReg = "<a  href=\"https://m.weibo.cn/p/index+.*?>([\\s\\S]*?)<span>(.+?)</span></a>"
+            let superTopicReg = "<a  href=('|\")https://m.weibo.cn/p/index+.*?>([\\s\\S]*?)<span>(.+?)</span></a>"
             let superTopics = RegularExpression(regex: superTopicReg, validateString: m.text)
             if superTopics.count == 1 {
                 m.text = replace(validateString: m.text, regex: superTopicReg, content: "#$2[超话]#")
             }
-//            let whole = RegularExpression(regex: "<a href=\"(.+?)>全文</a>", validateString: m.text)
-//            if whole.count == 1 {
-//                let s = RegularExpression(regex: "\"(.+?)\"", validateString: whole.first!)
-//                let wholeLink = replace(validateString: s.first!, regex: "\"", content: "")
-//                print(wholeLink)
-//            }
-            // 微博全文 只替换样式不用取值
-            m.text = replace(validateString: m.text, regex: "<a href=\"(.+?)>全文</a>", content: "微博全文")
+            m.text = replace(validateString: m.text, regex: "<a href='/n.+?>(.+?)</a>", content: "$1")
             
-            let linkReg = "<a data-url.+? href=\".+?</a>"
+            m.text = replace(validateString: m.text, regex: "<a href=('|\")(.+?)('|\")>全文</a>", content: "feed:/$2")
+            
+            let linkReg = "<a data-url.+? href=('|\").+?</a>"
             let links = RegularExpression(regex: linkReg, validateString: m.text)
             
             if links.count > 0 {
                 links.forEach { (i) in
                     let title = replace(validateString: RegularExpression(regex: "<span>.+?</span>", validateString: i).first!, regex: "<span\\s*[^>]*>(.*?)<\\/span>", content: "$1")
-                    let s = RegularExpression(regex: "[a-zA-z]+://[^\\s]*", validateString: i)
-                    let url = replace(validateString: s.last!, regex: "\"", content: "")
-                    print(title,url)
-                    m.text = (m.text as NSString).replacingOccurrences(of: i, with: url)
-//                    m.text = replace(validateString: m.text, regex: i, content: url)
+                    let url = replace(validateString: i, regex: "<a.+?href=\"(.+?)\".+?></a>", content: "$1")
+                    app.urlDict[url] = title
+                    m.text = replace(validateString: m.text, regex: linkReg, content: url)
                 }
             }
-            
-            
             
             temp.append(m)
         }
@@ -72,8 +77,6 @@ class ViewController: UIViewController {
             let s = RegularExpression(regex: "<[^>]*>", validateString: m.text)
             links.append(s)
         }
-        
-        print("")
     }
 
     private func loadData() {
