@@ -84,42 +84,96 @@ class ViewController: UIViewController {
                 }
             }
             
-            let text: NSMutableAttributedString = NSMutableAttributedString.init(string: m.text)
-            /// 话题 表情 @ http/https feed://
-            let topicss = RegularExpressions(regex: "#[^#]+#", validateString: m.text)
-            
-            let emos = RegularExpressions(regex: "(\\[[0-9a-zA-Z\\u4e00-\\u9fa5]+\\])", validateString: m.text)
-            
-            let ats = RegularExpressions(regex: "@[\\u4e00-\\u9fa5a-zA-Z0-9_-]{2,30}", validateString: m.text)
-            
-            let urls = RegularExpressions(regex: "((http[s]{0,1}|ftp)://[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)|(www.[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)", validateString: m.text)
-            
-            let feed = RegularExpressions(regex: "feed://.+", validateString: m.text)
-            
-            ats.forEach { (str, range) in
-                text.addAttributes([NSAttributedString.Key.foregroundColor : UIColor.red], range: range)
-            }
-            topicss.forEach { (str, range) in
-                text.addAttributes([NSAttributedString.Key.foregroundColor : UIColor.green], range: range)
-            }
-            print("before-----", text.length)
-            emos.reversed().forEach { (str, range) in
-                let attach = NSTextAttachment.init(image: UIImage(named: "panda")!)
-                attach.bounds = CGRect(x: 0, y: 0, width: 18, height: 18)
-                let icon = NSAttributedString.init(attachment: attach)
-                text.replaceCharacters(in: range, with: icon)
-            }
-            print("after-----", text.length)
-//            urls.reversed().forEach { (str, range) in
-//                if let title = app.urlDict[str] {
-//                    let t = NSAttributedString.init(string: title)
-//                    text.replaceCharacters(in: range, with: t)
-//                }
-//            }
-            
-            dataSources.append(text)
-            print("")
+            dataSources.append(matchesResultOfTitle(title: m.text).attributedString)
         }
+    }
+    
+    let KRegularMatcheHttpUrl = "((http[s]{0,1}|ftp)://[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)|(www.[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)" // 图标+描述 替换HTTP链接
+    let KRegularMatcheTopic = "#[^#]+#"    // 话题匹配 #话题#
+    let KRegularMatcheUser = "@[\\u4e00-\\u9fa5a-zA-Z0-9_-]*"  // @用户匹配
+    let KRegularMatcheEmotion = "\\[[^ \\[\\]]+?\\]"   //表情匹配 [爱心]
+    func matchesResultOfTitle(title: String) -> (attributedString: NSMutableAttributedString, height: CGFloat) {
+        let attributedString: NSMutableAttributedString = NSMutableAttributedString(string:title)
+        
+        //话题匹配
+        let topicRanges = RegularExpressions(regex: KRegularMatcheTopic, validateString: attributedString.string)
+        topicRanges.forEach { (str, range) in
+            attributedString.addAttributes([NSAttributedString.Key.link: str], range: range)
+        }
+        
+        //@用户匹配
+        let userRanges = RegularExpressions(regex: KRegularMatcheUser, validateString: attributedString.string)
+        userRanges.forEach { (str, range) in
+            attributedString.addAttributes([NSAttributedString.Key.link: str], range: range)
+        }
+        
+        var currentTitleRange = NSRange(location: 0, length:attributedString.length)
+        let feed = RegularExpressions(regex: "feed://.+", validateString: title)
+        feed.forEach { (str, range) in
+            let attchimage = NSTextAttachment()
+            attchimage.image = UIImage.init(named: "link")
+            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
+            let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
+            replaceStr.append(NSAttributedString.init(string: "全文"))
+            replaceStr.addAttributes([NSAttributedString.Key.link: str], range: NSRange(location: 0, length:replaceStr.length ))
+            //注意：涉及到文本替换的 ，每替换一次，原有的富文本位置发生改变，下一轮替换的起点需要重新计算！
+            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+            //图标+描述 替换HTTP链接字符
+            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: replaceStr)
+        }
+        
+        // 图标+网页title 替换链接
+        currentTitleRange = NSRange(location: 0, length:attributedString.length)
+        let urlRanges = RegularExpressions(regex: KRegularMatcheHttpUrl, validateString: title)
+        urlRanges.forEach { (str, range) in
+            let attchimage = NSTextAttachment()
+            attchimage.image = UIImage.init(named: "link")
+            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
+            let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
+            if let linkTitle = app.urlDict[str] {
+                if str.contains(".jpg") {
+                    attchimage.image = UIImage.init(named: "photo")
+                    replaceStr.append(NSAttributedString.init(string: "查看图片"))
+                } else {
+                    replaceStr.append(NSAttributedString.init(string: linkTitle))
+                }
+            } else {
+                replaceStr.append(NSAttributedString.init(string: "网页链接"))
+            }
+            replaceStr.addAttributes([NSAttributedString.Key.link: str], range: NSRange(location: 0, length:replaceStr.length ))
+            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+            //图标+描述 替换HTTP链接字符
+            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: replaceStr)
+        }
+        
+        //表情匹配
+        let emotionRanges = RegularExpressions(regex: KRegularMatcheEmotion, validateString: attributedString.string)
+        //经过上述的匹配替换后，此时富文本的范围
+        currentTitleRange = NSRange(location: 0, length:attributedString.length)
+        emotionRanges.forEach { (str, range) in
+            if str == "[超话]" { return }
+            //表情附件
+            let attchimage:NSTextAttachment = NSTextAttachment()
+            attchimage.image = UIImage.init(named: "panda")
+            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
+            let stringImage : NSAttributedString = NSAttributedString(attachment: attchimage)
+            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+            //图片替换表情文字
+            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: stringImage)
+        }
+        
+        //段落
+        let paragraphStyle: NSMutableParagraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 4 //行间距
+        attributedString.addAttributes([NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], range: NSRange(location:0, length:attributedString.length))
+        //元组
+        let attributedStringHeight = (attributedString, heightOfAttributedString(attributedString))
+        return attributedStringHeight
+    }
+    //计算富文本的高度
+    func heightOfAttributedString(_ attributedString: NSAttributedString) -> CGFloat {
+        let height : CGFloat =  attributedString.boundingRect(with: CGSize(width: UIScreen.main.bounds.size.width - 15 * 2, height: CGFloat(MAXFLOAT)), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil).height
+        return ceil(height)
     }
     
     /// 字符串的替换
