@@ -12,9 +12,19 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var urlDict: [String: String] = [:]
+    var emojiDict: [EmojiWeibo] = []
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        if let url = Bundle.main.url(forResource: "weiboicon", withExtension: "json") {
+            do {
+                let data = try Data(contentsOf: url)
+                let decoder = JSONDecoder()
+                let models = try decoder.decode([EmojiWeibo].self, from: data)
+                emojiDict = models
+            } catch {
+                print("error:\(error)")
+            }
+        }
         return true
     }
 

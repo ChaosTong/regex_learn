@@ -111,7 +111,7 @@ class ViewController: UIViewController {
         let feed = RegularExpressions(regex: "feed://.+", validateString: title)
         feed.forEach { (str, range) in
             let attchimage = NSTextAttachment()
-            attchimage.image = UIImage.init(named: "link")
+            attchimage.image = UIImage.init(text: .link)
             attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
             let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
             replaceStr.append(NSAttributedString.init(string: "全文"))
@@ -127,13 +127,16 @@ class ViewController: UIViewController {
         let urlRanges = RegularExpressions(regex: KRegularMatcheHttpUrl, validateString: title)
         urlRanges.forEach { (str, range) in
             let attchimage = NSTextAttachment()
-            attchimage.image = UIImage.init(named: "link")
+            attchimage.image = str.icon
             attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
             let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
             if let linkTitle = app.urlDict[str] {
                 if str.contains(".jpg") {
-                    attchimage.image = UIImage.init(named: "photo")
+                    attchimage.image = UIImage(text: .picture)
                     replaceStr.append(NSAttributedString.init(string: "查看图片"))
+                } else if linkTitle.contains("的微博视频") {
+                    attchimage.image = UIImage(text: .video)
+                    replaceStr.append(NSAttributedString.init(string: linkTitle))
                 } else {
                     replaceStr.append(NSAttributedString.init(string: linkTitle))
                 }
@@ -151,15 +154,20 @@ class ViewController: UIViewController {
         //经过上述的匹配替换后，此时富文本的范围
         currentTitleRange = NSRange(location: 0, length:attributedString.length)
         emotionRanges.forEach { (str, range) in
-            if str == "[超话]" { return }
             //表情附件
-            let attchimage:NSTextAttachment = NSTextAttachment()
-            attchimage.image = UIImage.init(named: "panda")
-            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
-            let stringImage : NSAttributedString = NSAttributedString(attachment: attchimage)
-            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
-            //图片替换表情文字
-            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: stringImage)
+            if let emoji = app.emojiDict.first(where: { "[\($0.name)]" == str }) {
+                let attchimage: NSTextAttachment = NSTextAttachment()
+                if emoji.filename.contains(".gif") {
+                    attchimage.image = UIImage.gif(name: emoji.filename)
+                } else {
+                    attchimage.image = UIImage.init(named: emoji.filename)
+                }
+                attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
+                let stringImage : NSAttributedString = NSAttributedString(attachment: attchimage)
+                let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+                //图片替换表情文字
+                attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: stringImage)
+            }
         }
         
         //段落
