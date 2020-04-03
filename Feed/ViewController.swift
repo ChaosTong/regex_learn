@@ -12,7 +12,7 @@ class ViewController: UIViewController {
     
     private let app = UIApplication.shared.delegate as! AppDelegate
     
-    var dataSources: [NSMutableAttributedString] = [] {
+    var dataSources: [(NSMutableAttributedString, CGFloat)] = [] {
         didSet {
             tableView.reloadData()
         }
@@ -26,7 +26,19 @@ class ViewController: UIViewController {
         loadData()
         
     }
-
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        caculateHeight(size.width)
+    }
+    
+    private func caculateHeight(_ width: CGFloat) {
+        var temp: [(NSMutableAttributedString, CGFloat)] = []
+        dataSources.forEach { (str, height) in
+            temp.append((str, heightOfAttributedString(str, width - 15 * 2)))
+        }
+        dataSources = temp
+    }
+    
     private func loadData() {
         if let url = Bundle.main.url(forResource: "feed", withExtension: "json") {
             do {
@@ -80,11 +92,11 @@ class ViewController: UIViewController {
                     let title = replace(validateString: RegularExpression(regex: "<span>.+?</span>", validateString: i).first!, regex: "<span\\s*[^>]*>(.*?)<\\/span>", content: "$1")
                     let url = replace(validateString: i, regex: "<a.+?href=\"(.+?)\".+?></a>", content: "$1")
                     app.urlDict[url] = title
-                    m.text = replace(validateString: m.text, regex: linkReg, content: url)
                 }
+                m.text = replace(validateString: m.text, regex: "<a data-url.+? href=\"(.+?)\".+?</a>", content: "$1")
             }
             
-            dataSources.append(matchesResultOfTitle(title: m.text).attributedString)
+            dataSources.append(matchesResultOfTitle(title: m.text))
         }
     }
     
@@ -179,8 +191,8 @@ class ViewController: UIViewController {
         return attributedStringHeight
     }
     //计算富文本的高度
-    func heightOfAttributedString(_ attributedString: NSAttributedString) -> CGFloat {
-        let height : CGFloat =  attributedString.boundingRect(with: CGSize(width: UIScreen.main.bounds.size.width - 15 * 2, height: CGFloat(MAXFLOAT)), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil).height
+    func heightOfAttributedString(_ attributedString: NSAttributedString, _ width: CGFloat = UIScreen.main.bounds.size.width - 15 * 2) -> CGFloat {
+        let height: CGFloat =  attributedString.boundingRect(with: CGSize(width: width, height: CGFloat(MAXFLOAT)), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil).height
         return ceil(height)
     }
     
@@ -251,9 +263,16 @@ extension ViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return dataSources.count
     }
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell") as! TextCell
-        cell.txt.attributedText  = dataSources[indexPath.row]
+        cell.txt.attributedText  = dataSources[indexPath.row].0
         return cell
+    }
+}
+
+extension ViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return dataSources[indexPath.row].1
     }
 }

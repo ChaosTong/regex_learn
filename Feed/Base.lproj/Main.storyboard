@@ -27,17 +27,17 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qNh-ho-F2H">
-                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="110"/>
+                                                    <rect key="frame" x="15" y="0.0" width="384" height="110"/>
                                                     <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                     <nil key="textColor"/>
                                                     <nil key="highlightedColor"/>
                                                 </label>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstItem="qNh-ho-F2H" firstAttribute="leading" secondItem="LdI-Yr-IBF" secondAttribute="leading" id="BXT-lF-xJJ"/>
+                                                <constraint firstItem="qNh-ho-F2H" firstAttribute="leading" secondItem="LdI-Yr-IBF" secondAttribute="leading" constant="15" id="BXT-lF-xJJ"/>
                                                 <constraint firstItem="qNh-ho-F2H" firstAttribute="top" secondItem="LdI-Yr-IBF" secondAttribute="top" id="Has-ek-pXT"/>
                                                 <constraint firstAttribute="bottom" secondItem="qNh-ho-F2H" secondAttribute="bottom" id="Ho7-Qk-sGn"/>
-                                                <constraint firstAttribute="trailing" secondItem="qNh-ho-F2H" secondAttribute="trailing" id="auO-Bp-zUn"/>
+                                                <constraint firstAttribute="trailing" secondItem="qNh-ho-F2H" secondAttribute="trailing" constant="15" id="auO-Bp-zUn"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <connections>
