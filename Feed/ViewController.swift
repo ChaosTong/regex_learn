@@ -125,9 +125,9 @@ class ViewController: UIViewController {
             let attchimage = NSTextAttachment()
             attchimage.image = UIImage.init(text: .link)
             attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
-            let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
+            let replaceStr: NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
             replaceStr.append(NSAttributedString.init(string: "全文"))
-            replaceStr.addAttributes([NSAttributedString.Key.link: str], range: NSRange(location: 0, length:replaceStr.length ))
+            replaceStr.addAttributes([NSAttributedString.Key.link: str], range: NSRange(location: 0, length:replaceStr.length))
             //注意：涉及到文本替换的 ，每替换一次，原有的富文本位置发生改变，下一轮替换的起点需要重新计算！
             let newLocation = range.location - (currentTitleRange.length - attributedString.length)
             //图标+描述 替换HTTP链接字符
