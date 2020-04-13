@@ -26,22 +26,20 @@
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="110"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qNh-ho-F2H">
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="eVX-PZ-w18" customClass="MPILabel">
                                                     <rect key="frame" x="15" y="0.0" width="384" height="110"/>
-                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                    <nil key="textColor"/>
-                                                    <nil key="highlightedColor"/>
-                                                </label>
+                                                    <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                </view>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstItem="qNh-ho-F2H" firstAttribute="leading" secondItem="LdI-Yr-IBF" secondAttribute="leading" constant="15" id="BXT-lF-xJJ"/>
-                                                <constraint firstItem="qNh-ho-F2H" firstAttribute="top" secondItem="LdI-Yr-IBF" secondAttribute="top" id="Has-ek-pXT"/>
-                                                <constraint firstAttribute="bottom" secondItem="qNh-ho-F2H" secondAttribute="bottom" id="Ho7-Qk-sGn"/>
-                                                <constraint firstAttribute="trailing" secondItem="qNh-ho-F2H" secondAttribute="trailing" constant="15" id="auO-Bp-zUn"/>
+                                                <constraint firstItem="eVX-PZ-w18" firstAttribute="leading" secondItem="LdI-Yr-IBF" secondAttribute="leading" constant="15" id="0RT-cg-Ad4"/>
+                                                <constraint firstAttribute="bottom" secondItem="eVX-PZ-w18" secondAttribute="bottom" id="5rS-qt-qC8"/>
+                                                <constraint firstItem="eVX-PZ-w18" firstAttribute="top" secondItem="LdI-Yr-IBF" secondAttribute="top" id="dv5-TM-JVt"/>
+                                                <constraint firstAttribute="trailing" secondItem="eVX-PZ-w18" secondAttribute="trailing" constant="15" id="mh9-Km-boR"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <connections>
-                                            <outlet property="txt" destination="qNh-ho-F2H" id="Pdi-UV-wIG"/>
+                                            <outlet property="txt" destination="eVX-PZ-w18" id="yNf-Fh-nqL"/>
                                         </connections>
                                     </tableViewCell>
                                 </prototypes>

@@ -7,14 +7,14 @@
 //
 
 import UIKit
+import MPITextKit
 
 class TextCell: UITableViewCell {
 
-    @IBOutlet weak var txt: UILabel!
+    @IBOutlet weak var txt: MPILabel!
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        // Initialization code
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

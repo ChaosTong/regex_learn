@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import MPITextKit
+import YYImage
 
 class ViewController: UIViewController {
     
@@ -28,7 +30,8 @@ class ViewController: UIViewController {
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        caculateHeight(size.width)
+//        caculateHeight(size.width)
+        tableView.reloadData()
     }
     
     private func caculateHeight(_ width: CGFloat) {
@@ -96,7 +99,7 @@ class ViewController: UIViewController {
                 m.text = replace(validateString: m.text, regex: "<a data-url.+? href=\"(.+?)\".+?</a>", content: "$1")
             }
             
-            dataSources.append(matchesResultOfTitle(title: m.text))
+            dataSources.append(matchesResultOfTitleMP(title: m.text))
         }
     }
     
@@ -195,6 +198,109 @@ class ViewController: UIViewController {
         let height: CGFloat =  attributedString.boundingRect(with: CGSize(width: width, height: CGFloat(MAXFLOAT)), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil).height
         return ceil(height)
     }
+    func matchesResultOfTitleMP(title: String) -> (attributedString: NSMutableAttributedString, height: CGFloat) {
+        let attributedString: NSMutableAttributedString = NSMutableAttributedString(string:title)
+        
+        //话题匹配
+        let topicRanges = RegularExpressions(regex: KRegularMatcheTopic, validateString: attributedString.string)
+        topicRanges.forEach { (str, range) in
+            let link = MPITextLink(value: str as NSString)
+            attributedString.addAttributes([NSAttributedString.Key.foregroundColor: UIColor(red:0.27, green:0.56, blue:0.90, alpha:1.00), NSAttributedString.Key.MPILink: link], range: range)
+        }
+
+        //@用户匹配
+        let userRanges = RegularExpressions(regex: KRegularMatcheUser, validateString: attributedString.string)
+        userRanges.forEach { (str, range) in
+            let link = MPITextLink(value: str as NSObjectProtocol)
+            attributedString.addAttributes([NSAttributedString.Key.foregroundColor: UIColor(red:0.27, green:0.56, blue:0.90, alpha:1.00), NSAttributedString.Key.MPILink: link], range: range)
+        }
+        
+        var currentTitleRange = NSRange(location: 0, length:attributedString.length)
+        let feed = RegularExpressions(regex: "feed://.+", validateString: title)
+        feed.forEach { (str, range) in
+            let attchimage = NSTextAttachment()
+            attchimage.image = UIImage.init(text: .link)
+            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
+            let replaceStr: NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
+            replaceStr.append(NSAttributedString.init(string: "全文"))
+            let link = MPITextLink(value: str as NSObjectProtocol)
+            replaceStr.addAttributes([NSAttributedString.Key.foregroundColor: UIColor(red:0.27, green:0.56, blue:0.90, alpha:1.00), NSAttributedString.Key.MPILink: link], range: NSRange(location: 0, length:replaceStr.length))
+            //注意：涉及到文本替换的 ，每替换一次，原有的富文本位置发生改变，下一轮替换的起点需要重新计算！
+            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+            //图标+描述 替换HTTP链接字符
+            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: replaceStr)
+        }
+
+        // 图标+网页title 替换链接
+        currentTitleRange = NSRange(location: 0, length:attributedString.length)
+        let urlRanges = RegularExpressions(regex: KRegularMatcheHttpUrl, validateString: title)
+        urlRanges.forEach { (str, range) in
+            let attchimage = NSTextAttachment()
+            attchimage.image = str.icon
+            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
+            let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
+            if let linkTitle = app.urlDict[str] {
+                if str.contains(".jpg") {
+                    attchimage.image = UIImage(text: .picture)
+                    replaceStr.append(NSAttributedString.init(string: "查看图片"))
+                } else if linkTitle.contains("的微博视频") {
+                    attchimage.image = UIImage(text: .video)
+                    replaceStr.append(NSAttributedString.init(string: linkTitle))
+                } else {
+                    replaceStr.append(NSAttributedString.init(string: linkTitle))
+                }
+            } else {
+                replaceStr.append(NSAttributedString.init(string: "网页链接"))
+            }
+            let link = MPITextLink(value: str as NSObjectProtocol)
+            replaceStr.addAttributes([NSAttributedString.Key.foregroundColor: UIColor(red:0.27, green:0.56, blue:0.90, alpha:1.00), NSAttributedString.Key.MPILink: link], range: NSRange(location: 0, length:replaceStr.length))
+            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+            //图标+描述 替换HTTP链接字符
+            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: replaceStr)
+        }
+
+        //表情匹配
+        let emotionRanges = RegularExpressions(regex: KRegularMatcheEmotion, validateString: attributedString.string)
+        //经过上述的匹配替换后，此时富文本的范围
+        currentTitleRange = NSRange(location: 0, length:attributedString.length)
+        var last: String? = nil
+        emotionRanges.forEach { (str, range) in
+            //表情附件
+            if let emoji = app.emojiDict.first(where: { "[\($0.name)]" == str }) {
+                let attchimage = MPITextAttachment.init()
+                if emoji.filename.contains(".gif") {
+                    let path = Bundle.main.url(forResource: "emoji_gif/\(emoji.filename)", withExtension: "")!
+                    let data = try! Data.init(contentsOf: path)
+                    let image = YYImage.init(data: data, scale: 2)
+                    image?.preloadAllAnimatedImageFrames = true
+                    let imageView = YYAnimatedImageView.init(image: image)
+                    attchimage.content = imageView
+                } else {
+                    attchimage.content = UIImage.init(named: emoji.filename)
+                }
+                attchimage.bounds = CGRect.init(x: 0, y: 0, width: 16, height: 16)
+                let stringImage: NSAttributedString = NSAttributedString(attachment: attchimage)
+                let attachText = stringImage.mutableCopy() as! NSMutableAttributedString
+                
+                if last == str {
+                    let entity = MPITextEntity(value: "\(str)-\(range.location)" as NSString)
+                    attachText.addAttribute(.MPIEntity, value: entity, range: attachText.mpi_rangeOfAll())
+                }
+                last = str
+                
+                let newLocation = range.location - (currentTitleRange.length - attributedString.length)
+                attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: attachText)
+            }
+        }
+        
+//        段落
+        let paragraphStyle: NSMutableParagraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 4 //行间距
+        attributedString.addAttributes([NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], range: NSRange(location:0, length:attributedString.length))
+        //元组
+        let attributedStringHeight = (attributedString, heightOfAttributedString(attributedString))
+        return attributedStringHeight
+    }
     
     /// 字符串的替换
     ///
@@ -266,13 +372,27 @@ extension ViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell") as! TextCell
-        cell.txt.attributedText  = dataSources[indexPath.row].0
+        cell.txt.attributedText = dataSources[indexPath.row].0
+        cell.txt.numberOfLines = 0
+        cell.txt.sizeToFit()
+        cell.txt.delegate = self
         return cell
     }
 }
 
-extension ViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return dataSources[indexPath.row].1
+extension ViewController: MPILabelDelegate {
+    func label(_ label: MPILabel, highlightedTextAttributesWith link: MPITextLink, forAttributedText attributedText: NSAttributedString, in characterRange: NSRange) -> [AnyHashable : Any]? {
+        let backgroud = MPITextBackground(fill: UIColor(red:0.15, green:0.79, blue:0.25, alpha:1.00), cornerRadius: 3)
+        return [NSAttributedString.Key.MPIBackground: backgroud]
+    }
+    func label(_ label: MPILabel, didInteractWith link: MPITextLink, forAttributedText attributedText: NSAttributedString, in characterRange: NSRange, interaction: MPITextItemInteraction) {
+        guard let link = link.value as? String else { return }
+        print(link)
     }
 }
+
+//extension ViewController: UITableViewDelegate {
+//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+//        return dataSources[indexPath.row].1
+//    }
+//}
