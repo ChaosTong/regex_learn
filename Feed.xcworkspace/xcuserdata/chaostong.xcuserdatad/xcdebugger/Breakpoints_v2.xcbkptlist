@@ -36,9 +36,9 @@
             filePath = "Feed/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "265"
-            endingLineNumber = "265"
-            landmarkName = "matchesResultOfTitleMP(title:)"
+            startingLineNumber = "179"
+            endingLineNumber = "179"
+            landmarkName = "matchesResultOfTitle(title:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

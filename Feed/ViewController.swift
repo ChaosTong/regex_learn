@@ -99,7 +99,7 @@ class ViewController: UIViewController {
                 m.text = replace(validateString: m.text, regex: "<a data-url.+? href=\"(.+?)\".+?</a>", content: "$1")
             }
             
-            dataSources.append(matchesResultOfTitleMP(title: m.text))
+            dataSources.append(matchesResultOfTitle(title: m.text))
         }
     }
     
@@ -107,98 +107,12 @@ class ViewController: UIViewController {
     let KRegularMatcheTopic = "#[^#]+#"    // 话题匹配 #话题#
     let KRegularMatcheUser = "@[\\u4e00-\\u9fa5a-zA-Z0-9_-]*"  // @用户匹配
     let KRegularMatcheEmotion = "\\[[^ \\[\\]]+?\\]"   //表情匹配 [爱心]
-    func matchesResultOfTitle(title: String) -> (attributedString: NSMutableAttributedString, height: CGFloat) {
-        let attributedString: NSMutableAttributedString = NSMutableAttributedString(string:title)
-        
-        //话题匹配
-        let topicRanges = RegularExpressions(regex: KRegularMatcheTopic, validateString: attributedString.string)
-        topicRanges.forEach { (str, range) in
-            attributedString.addAttributes([NSAttributedString.Key.link: str], range: range)
-        }
-        
-        //@用户匹配
-        let userRanges = RegularExpressions(regex: KRegularMatcheUser, validateString: attributedString.string)
-        userRanges.forEach { (str, range) in
-            attributedString.addAttributes([NSAttributedString.Key.link: str], range: range)
-        }
-        
-        var currentTitleRange = NSRange(location: 0, length:attributedString.length)
-        let feed = RegularExpressions(regex: "feed://.+", validateString: title)
-        feed.forEach { (str, range) in
-            let attchimage = NSTextAttachment()
-            attchimage.image = UIImage.init(text: .link)
-            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
-            let replaceStr: NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
-            replaceStr.append(NSAttributedString.init(string: "全文"))
-            replaceStr.addAttributes([NSAttributedString.Key.link: str], range: NSRange(location: 0, length:replaceStr.length))
-            //注意：涉及到文本替换的 ，每替换一次，原有的富文本位置发生改变，下一轮替换的起点需要重新计算！
-            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
-            //图标+描述 替换HTTP链接字符
-            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: replaceStr)
-        }
-        
-        // 图标+网页title 替换链接
-        currentTitleRange = NSRange(location: 0, length:attributedString.length)
-        let urlRanges = RegularExpressions(regex: KRegularMatcheHttpUrl, validateString: title)
-        urlRanges.forEach { (str, range) in
-            let attchimage = NSTextAttachment()
-            attchimage.image = str.icon
-            attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
-            let replaceStr : NSMutableAttributedString = NSMutableAttributedString(attachment: attchimage)
-            if let linkTitle = app.urlDict[str] {
-                if str.contains(".jpg") {
-                    attchimage.image = UIImage(text: .picture)
-                    replaceStr.append(NSAttributedString.init(string: "查看图片"))
-                } else if linkTitle.contains("的微博视频") {
-                    attchimage.image = UIImage(text: .video)
-                    replaceStr.append(NSAttributedString.init(string: linkTitle))
-                } else {
-                    replaceStr.append(NSAttributedString.init(string: linkTitle))
-                }
-            } else {
-                replaceStr.append(NSAttributedString.init(string: "网页链接"))
-            }
-            replaceStr.addAttributes([NSAttributedString.Key.link: str], range: NSRange(location: 0, length:replaceStr.length ))
-            let newLocation = range.location - (currentTitleRange.length - attributedString.length)
-            //图标+描述 替换HTTP链接字符
-            attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: replaceStr)
-        }
-        
-        //表情匹配
-        let emotionRanges = RegularExpressions(regex: KRegularMatcheEmotion, validateString: attributedString.string)
-        //经过上述的匹配替换后，此时富文本的范围
-        currentTitleRange = NSRange(location: 0, length:attributedString.length)
-        emotionRanges.forEach { (str, range) in
-            //表情附件
-            if let emoji = app.emojiDict.first(where: { "[\($0.name)]" == str }) {
-                let attchimage: NSTextAttachment = NSTextAttachment()
-                if emoji.filename.contains(".gif") {
-                    attchimage.image = UIImage.gif(name: emoji.filename)
-                } else {
-                    attchimage.image = UIImage.init(named: emoji.filename)
-                }
-                attchimage.bounds = CGRect.init(x: 0, y: -2, width: 16, height: 16)
-                let stringImage : NSAttributedString = NSAttributedString(attachment: attchimage)
-                let newLocation = range.location - (currentTitleRange.length - attributedString.length)
-                //图片替换表情文字
-                attributedString.replaceCharacters(in: NSRange(location: newLocation, length: range.length), with: stringImage)
-            }
-        }
-        
-        //段落
-        let paragraphStyle: NSMutableParagraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 4 //行间距
-        attributedString.addAttributes([NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], range: NSRange(location:0, length:attributedString.length))
-        //元组
-        let attributedStringHeight = (attributedString, heightOfAttributedString(attributedString))
-        return attributedStringHeight
-    }
     //计算富文本的高度
     func heightOfAttributedString(_ attributedString: NSAttributedString, _ width: CGFloat = UIScreen.main.bounds.size.width - 15 * 2) -> CGFloat {
         let height: CGFloat =  attributedString.boundingRect(with: CGSize(width: width, height: CGFloat(MAXFLOAT)), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil).height
         return ceil(height)
     }
-    func matchesResultOfTitleMP(title: String) -> (attributedString: NSMutableAttributedString, height: CGFloat) {
+    func matchesResultOfTitle(title: String) -> (attributedString: NSMutableAttributedString, height: CGFloat) {
         let attributedString: NSMutableAttributedString = NSMutableAttributedString(string:title)
         
         //话题匹配

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -12,7 +12,6 @@
 		BBB449E524358F160091BD90 /* ExIconFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB449E424358F160091BD90 /* ExIconFont.swift */; };
 		BBB449E72435BA2A0091BD90 /* ExRegex.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB449E62435BA2A0091BD90 /* ExRegex.swift */; };
 		BBB449EB2435E7750091BD90 /* EmojiWeibo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB449EA2435E7750091BD90 /* EmojiWeibo.swift */; };
-		BBB449F12435EFAE0091BD90 /* ExGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB449F02435EFAE0091BD90 /* ExGif.swift */; };
 		BBB449F32435F06F0091BD90 /* emoji_gif in Resources */ = {isa = PBXBuildFile; fileRef = BBB449F22435F06E0091BD90 /* emoji_gif */; };
 		BBB449F52435F2B30091BD90 /* weiboicon.json in Resources */ = {isa = PBXBuildFile; fileRef = BBB449F42435F2B20091BD90 /* weiboicon.json */; };
 		BBBA9B24243198C500BE79A6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBA9B23243198C500BE79A6 /* AppDelegate.swift */; };
@@ -36,7 +35,6 @@
 		BBB449E424358F160091BD90 /* ExIconFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExIconFont.swift; sourceTree = "<group>"; };
 		BBB449E62435BA2A0091BD90 /* ExRegex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExRegex.swift; sourceTree = "<group>"; };
 		BBB449EA2435E7750091BD90 /* EmojiWeibo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiWeibo.swift; sourceTree = "<group>"; };
-		BBB449F02435EFAE0091BD90 /* ExGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExGif.swift; sourceTree = "<group>"; };
 		BBB449F22435F06E0091BD90 /* emoji_gif */ = {isa = PBXFileReference; lastKnownFileType = folder; path = emoji_gif; sourceTree = "<group>"; };
 		BBB449F42435F2B20091BD90 /* weiboicon.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = weiboicon.json; sourceTree = SOURCE_ROOT; };
 		BBBA9B20243198C500BE79A6 /* Feed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Feed.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,7 +68,6 @@
 				4CC4BB71033C75B3C51121B4 /* Pods-Feed.debug.xcconfig */,
 				63A347160B10092B52F82F0A /* Pods-Feed.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -119,7 +116,6 @@
 				BBB449EA2435E7750091BD90 /* EmojiWeibo.swift */,
 				BBBA9B3B2431A45000BE79A6 /* TextCell.swift */,
 				BBB449E62435BA2A0091BD90 /* ExRegex.swift */,
-				BBB449F02435EFAE0091BD90 /* ExGif.swift */,
 				BBB449F22435F06E0091BD90 /* emoji_gif */,
 			);
 			path = Feed;
@@ -249,7 +245,6 @@
 				BBB449E3243589B80091BD90 /* IconFont.swift in Sources */,
 				BBB449E524358F160091BD90 /* ExIconFont.swift in Sources */,
 				BBBA9B28243198C500BE79A6 /* ViewController.swift in Sources */,
-				BBB449F12435EFAE0091BD90 /* ExGif.swift in Sources */,
 				BBB449EB2435E7750091BD90 /* EmojiWeibo.swift in Sources */,
 				BBBA9B24243198C500BE79A6 /* AppDelegate.swift in Sources */,
 				BBBA9B26243198C500BE79A6 /* SceneDelegate.swift in Sources */,
